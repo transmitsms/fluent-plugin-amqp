@@ -20,6 +20,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency "fluentd", [">= 0.10.0", "< 2"]
   gem.add_dependency "bunny", ">= 0.10.8"
   gem.add_dependency "yajl-ruby", "~> 1.0"
+  gem.add_dependency "amq-protocol", "<= 1.9.2"
 
   gem.add_development_dependency "rake", ">= 0.9.2"
   gem.add_development_dependency "mocha"
