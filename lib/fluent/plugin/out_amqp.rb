@@ -71,7 +71,13 @@ class AmqpOutput < Fluent::BufferedOutput
       if @priority
         puboptions[:priority] = @priority
       end
-      get_or_create_exchange.publish Yajl.dump(event), puboptions
+      begin
+        get_or_create_exchange.publish Yajl.dump(event), puboptions
+      rescue Bunny::ConnectionClosedError, Bunny::NetworkFailure, Bunny::TCPConnectionFailed,
+             IOError, Errno::ECONNRESET, Errno::EPIPE
+        $log.error "AMQP connection lost, exiting for supervisor restart"
+        exit 1
+      end
     end
   end
 

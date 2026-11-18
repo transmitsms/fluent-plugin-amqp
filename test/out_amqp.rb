@@ -125,5 +125,42 @@ class AmqpOutputTest < Test::Unit::TestCase
     d.run
   end
 
+  def test_exits_when_broker_connection_drops
+    d = create_driver
+
+    amqp_conn_mock = mock()
+    amqp_exchange_mock = mock()
+    Bunny.stubs(:new).returns(amqp_conn_mock)
+    amqp_conn_mock.stubs(:open?).returns(true)
+    amqp_conn_mock.stubs(:create_channel)
+    amqp_conn_mock.stubs(:stop)
+    Bunny::Exchange.stubs(:new).returns(amqp_exchange_mock)
+
+    t = Time.now.to_i
+    d.emit({"a" => 1}, t)
+    amqp_exchange_mock.stubs(:publish).raises(Bunny::ConnectionClosedError.new("closed"))
+
+    error = assert_raise(SystemExit) { d.run }
+    assert_equal 1, error.status
+  end
+
+  def test_publish_error_does_not_exit
+    d = create_driver
+
+    amqp_conn_mock = mock()
+    amqp_exchange_mock = mock()
+    Bunny.stubs(:new).returns(amqp_conn_mock)
+    amqp_conn_mock.stubs(:open?).returns(true)
+    amqp_conn_mock.stubs(:create_channel)
+    amqp_conn_mock.stubs(:stop)
+    Bunny::Exchange.stubs(:new).returns(amqp_exchange_mock)
+
+    t = Time.now.to_i
+    d.emit({"a" => 1}, t)
+    amqp_exchange_mock.stubs(:publish).raises(RuntimeError.new("bad payload"))
+
+    assert_raise(RuntimeError) { d.run }
+  end
+
 end
 
